@@ -59,7 +59,7 @@ runs:
           esac
         }
         bootstrap_version='v0.2.1'
-        bootstrap_linux_amd64_sha='abd520df82caabe0b82769e576092a02639002222b0173ed8591e8019d41d456'
+        bootstrap_linux_amd64_sha='615eda7dcd08e73b34bd9b07c095deccba5de7853ef2149a2561a53401c63732'
         bootstrap_linux_arm64_sha='ed5b3b57c454cf659d01c2e2742c603f57f50c042a1c13e7706bfe9a09d39227'
         bootstrap_darwin_amd64_sha='fb646999616c12bdc55e140bccb3041afdcf1d0fc245a863dc05ca401020dc45'
         bootstrap_darwin_arm64_sha='cbafa9c76efc29ca2e05b6fb6c4fe66f0b02e3ad37d77c0f7ba2f0549d49f905'
