@@ -1,0 +1,172 @@
+# action.yml
+# Shamelessly stolen from the cosign installer action
+name: bom-installer
+author: puerco
+description: 'Installs the kubernetes bom tool into your actions environment'
+branding:
+  icon: 'book'
+  color: 'blue'
+# This is pinned to the last major release, we have to bump it for each action version.
+inputs:
+  bom-release:
+    description: 'bom version to be installed'
+    required: false
+    default: 'v0.2.1'
+  install-dir:
+    description: 'Where to install the bom binary'
+    required: false
+    default: '$HOME/.bom'
+runs:
+  using: "composite"
+  steps:
+    # We verify the version against a SHA **in the published action itself**, not in the GCS bucket.
+    - shell: bash
+      run: |
+        #!/bin/bash
+        shopt -s expand_aliases
+        if [ -z "$NO_COLOR" ]; then
+          alias log_info="echo -e \"\033[1;32mINFO\033[0m:\""
+          alias log_error="echo -e \"\033[1;31mERROR\033[0m:\""
+        else
+          alias log_info="echo \"INFO:\""
+          alias log_error="echo \"ERROR:\""
+        fi
+        set -e
+        
+        mkdir -p ${{ inputs.install-dir }}
+        if [[ ${{ inputs.bom-release }} == "main" ]]; then
+          log_info "installing bom via 'go install' from its main version"
+          GOBIN=$(go env GOPATH)/bin
+          go install sigs.k8s.io/bom/cmd/bom
+          ln -s $GOBIN/bom ${{ inputs.install-dir}}/bom
+          exit 0
+        fi
+        shaprog() {
+          case ${{ runner.os }} in
+            Linux)
+              sha256sum $1 | cut -d' ' -f1
+              ;;
+            macOS)
+              shasum -a256 $1 | cut -d' ' -f1
+              ;;
+            Windows)
+              powershell -command "(Get-FileHash $1 -Algorithm SHA256 | Select-Object -ExpandProperty Hash).ToLower()"
+              ;;
+            *)
+              log_error "unsupported OS ${{ runner.os }}"
+              exit 1
+              ;;
+          esac
+        }
+        bootstrap_version='v0.2.1'
+        bootstrap_linux_amd64_sha='abd520df82caabe0b82769e576092a02639002222b0173ed8591e8019d41d456'
+        bootstrap_linux_arm64_sha='ed5b3b57c454cf659d01c2e2742c603f57f50c042a1c13e7706bfe9a09d39227'
+        bootstrap_darwin_amd64_sha='fb646999616c12bdc55e140bccb3041afdcf1d0fc245a863dc05ca401020dc45'
+        bootstrap_darwin_arm64_sha='cbafa9c76efc29ca2e05b6fb6c4fe66f0b02e3ad37d77c0f7ba2f0549d49f905'
+        bootstrap_windows_amd64_sha='2d332596f186aec3ae517b59427b1f0b5e32a9218ca20199527678bf21f83d2c'
+        trap "popd >/dev/null" EXIT
+        pushd ${{ inputs.install-dir }} > /dev/null
+        case ${{ runner.os }} in
+          Linux)
+            case ${{ runner.arch }} in
+              X64)
+                bootstrap_filename='bom-linux-amd64'
+                bootstrap_sha=${bootstrap_linux_amd64_sha}
+                desired_filename='bom-linux-amd64'
+                ;;
+              
+              ARM64)
+                bootstrap_filename='bom-linux-arm64'
+                bootstrap_sha=${bootstrap_linux_arm64_sha}
+                desired_filename='bom-linux-amd64'
+                ;;
+              
+              *)
+                log_error "unsupported architecture $arch"
+                exit 1
+                ;;
+            esac
+            ;;
+          
+          macOS)
+            case ${{ runner.arch }} in
+              X64)
+                bootstrap_filename='bom-darwin-amd64'
+                bootstrap_sha=${bootstrap_darwin_amd64_sha}
+                desired_filename='bom-darwin-amd64'
+                ;;
+              
+              ARM64)
+                bootstrap_filename='bom-darwin-arm64'
+                bootstrap_sha=${bootstrap_darwin_arm64_sha}
+                desired_filename='bom-darwin-arm64'
+                ;;
+              
+              *)
+                log_error "unsupported architecture $arch"
+                exit 1
+                ;;
+            esac
+            ;;
+          Windows)
+            case ${{ runner.arch }} in
+              X64)
+                bootstrap_filename='bom-windows-amd64.exe'
+                bootstrap_sha=${bootstrap_windows_amd64_sha}
+                desired_filename='bom-windows-amd64.exe'
+                ;;
+              *)
+                log_error "unsupported architecture $arch"
+                exit 1
+                ;;
+            esac
+            ;;
+          *)
+            log_error "unsupported architecture $arch"
+            exit 1
+            ;;
+        esac
+        expected_bootstrap_version_digest=${bootstrap_sha}
+        log_info "Downloading bootstrap version '${bootstrap_version}' of bom to verify version to be installed...\n      https://github.com/kubernetes-sigs/bom/releases/download/${bootstrap_version}/${bootstrap_filename}"
+        curl -sL https://github.com/kubernetes-sigs/bom/releases/download/${bootstrap_version}/${bootstrap_filename} -o bom
+        shaBootstrap=$(shaprog bom);
+        if [[ $shaBootstrap != ${expected_bootstrap_version_digest} ]]; then
+          log_error "Unable to validate bom version: '${{ inputs.bom-release }}'"
+          exit 1
+        fi
+        chmod +x bom
+        # If the bootstrap and specified `bom` releases are the same, we're done.
+        if [[ ${{ inputs.bom-release }} == ${bootstrap_version} ]]; then
+          log_info "bootstrap version successfully verified and matches requested version so nothing else to do"
+          exit 0
+        fi
+        semver='^v([0-9]+\.){0,2}(\*|[0-9]+)$'
+        if [[ ${{ inputs.bom-release }} =~ $semver ]]; then
+          log_info "Installing bom version '${{ inputs.bom-release }}'"
+        else
+          log_error "Invalid bom version: '${{ inputs.bom-release }}'"
+          exit 1
+        fi
+        # Download custom version, then check it against its SBOM
+        # TODO(puerco): Uncomment this line and bom verify bellow after v0.3.0 release
+        log_info "Downloading platform-specific version '${{ inputs.bom-release }}' of bom...\n      https://github.com/kubernetes-sigs/bom/releases/download/${{ inputs.bom-release }}/${desired_filename}"
+        curl -sL https://github.com/kubernetes-sigs/bom/releases/download/${{ inputs.bom-release }}/${desired_filename} 
+        shaCustom=$(shaprog ${desired_filename});
+        # same hash means it is the same release
+        if [[ $shaCustom != $shaBootstrap ]]; then
+          log_info "Downloading SBOM for bom '${{ inputs.bom-release }}' ...\n      https://github.com/kubernetes-sigs/bom/releases/download/${{ inputs.bom-release }}/sbom.spdx"
+          curl -sLO https://github.com/kubernetes-sigs/bom/releases/download/${{ inputs.bom-release }}/sbom.spdx
+          
+          log_info "Using bootstrap bom to verify requested binary against SBOM data"
+          # ./bom verify --exit-code sbom.spdx ${desired_filename}
+          rm bom
+          mv ${desired_filename} bom
+          chmod +x bom
+          log_info "Installation complete!"
+        fi
+    - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
+      run:  echo "${{ inputs.install-dir }}" >> $GITHUB_PATH
+      shell: bash
+    - if: ${{ runner.os == 'Windows' }}
+      run:  echo "${{ inputs.install-dir }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: pwsh
