@@ -86,6 +86,31 @@ artifacts:
 
 ```
 
+This example would produce an SBOM with the following structure (sample):
+
+```
+ 📂 SPDX Document SBOM-SPDX-ed8052cf-d9ac-44f3-862e-a80bad66bb9b
+  │ 
+  │ 📦 DESCRIBES 2 Packages
+  │ 
+  ├ directoryName
+  │  └ 🔗 130 Relationships
+  │ 
+  ├ ghcr.io/myorg/myrepo/myimage:tag
+  │  └ 🔗 2 Relationships
+  │ 
+  │ 📄 DESCRIBES 3 Files
+  │ 
+  ├ SPDXRef-File-bin-linux-binary (bin/linux-binary)
+  ├ SPDXRef-File-bin-windows-binary-exe (bin/windows-binary.exe)
+  └ SPDXRef-File-bin-mac-binary (bin/mac-binary)
+```
+
+You can check the structure of any SPDX SBOM in tag-value format with 
+bom by running `bom document outline sbom.spdx`
+
+## Getting Help
+
 For more information please check the documentation on the
 [bom project page](https://github.com/kubernetes-sigs/bom) or reach out to the 
 Release Engineering team in the 
