@@ -1,0 +1,37 @@
+name: test-bom
+
+on: [pull_request]
+
+jobs:
+   test_sbom_action:
+     runs-on: ${{ matrix.os }}
+     strategy:
+       matrix:
+         os: [macos-latest, ubuntu-latest, windows-latest]
+     permissions:
+       contents: read
+     steps:
+     - name: Checkout
+       uses: actions/checkout@v2
+     - name: Install Kubernetes bom
+       uses: ./
+     - name: Check version
+       run: bom version
+     name: Install bom with default version
+   test_sbom_action_with_given_input_version:
+     name: Install bom with given v0.2.1 version
+     runs-on: ${{ matrix.os }}
+     strategy:
+       matrix:
+         os: [macos-latest, ubuntu-latest, windows-latest]
+     permissions:
+       contents: read
+     steps:
+     - name: Checkout
+       uses: actions/checkout@v2
+     - name: Install Kubernetes bom
+       uses: ./
+       with:
+         bom-release: v0.2.1
+     - name: Check version
+       run: bom version
