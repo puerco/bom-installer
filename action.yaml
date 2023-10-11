@@ -11,7 +11,7 @@ inputs:
   bom-release:
     description: 'bom version to be installed'
     required: false
-    default: 'v0.2.1'
+    default: 'v0.5.1'
   install-dir:
     description: 'Where to install the bom binary'
     required: false
@@ -58,21 +58,21 @@ runs:
               ;;
           esac
         }
-        bootstrap_version='v0.2.1'
-        bootstrap_linux_amd64_sha='615eda7dcd08e73b34bd9b07c095deccba5de7853ef2149a2561a53401c63732'
-        bootstrap_linux_arm64_sha='ed5b3b57c454cf659d01c2e2742c603f57f50c042a1c13e7706bfe9a09d39227'
-        bootstrap_darwin_amd64_sha='fb646999616c12bdc55e140bccb3041afdcf1d0fc245a863dc05ca401020dc45'
-        bootstrap_darwin_arm64_sha='cbafa9c76efc29ca2e05b6fb6c4fe66f0b02e3ad37d77c0f7ba2f0549d49f905'
-        bootstrap_windows_amd64_sha='2d332596f186aec3ae517b59427b1f0b5e32a9218ca20199527678bf21f83d2c'
+        bootstrap_version='v0.5.1'
+        bootstrap_linux_amd64_sha='d81153a14c2365ec496b54c687aa734167a178d6827cc9d7da8d7182b3c6dc59'
+        bootstrap_linux_arm64_sha='c6eb19028f5f24bff7b433ba62bed76aed22e0b2d515456477f9e45eea34cfe9'
+        bootstrap_darwin_amd64_sha='61658bfd2c5e8d037d2ae9226a3e17529e82c2ee3de5bef827cd4702ae33381f'
+        bootstrap_darwin_arm64_sha='eb6f3659d6b21e4eb84a506172e09ad53d780fd610247717b8f2d2cc55bee837'
+        bootstrap_windows_amd64_sha='fe8e8e4bbca00f8e39144f643de82c3082fc03b6c22e24831a994735d24a1f02'
         trap "popd >/dev/null" EXIT
         pushd ${{ inputs.install-dir }} > /dev/null
         case ${{ runner.os }} in
           Linux)
             case ${{ runner.arch }} in
               X64)
-                bootstrap_filename='bom-linux-amd64'
+                bootstrap_filename='bom-amd64-linux'
                 bootstrap_sha=${bootstrap_linux_amd64_sha}
-                desired_filename='bom-linux-amd64'
+                desired_filename='bom-amd64-linux'
                 ;;
               
               ARM64)
@@ -80,7 +80,6 @@ runs:
                 bootstrap_sha=${bootstrap_linux_arm64_sha}
                 desired_filename='bom-linux-amd64'
                 ;;
-              
               *)
                 log_error "unsupported architecture $arch"
                 exit 1
@@ -91,15 +90,15 @@ runs:
           macOS)
             case ${{ runner.arch }} in
               X64)
-                bootstrap_filename='bom-darwin-amd64'
+                bootstrap_filename='bom-amd64-darwin'
                 bootstrap_sha=${bootstrap_darwin_amd64_sha}
-                desired_filename='bom-darwin-amd64'
+                desired_filename='bom-amd64-darwin'
                 ;;
               
               ARM64)
-                bootstrap_filename='bom-darwin-arm64'
+                bootstrap_filename='bom-arm64-darwin'
                 bootstrap_sha=${bootstrap_darwin_arm64_sha}
-                desired_filename='bom-darwin-arm64'
+                desired_filename='bom-arm64-darwin'
                 ;;
               
               *)
@@ -111,9 +110,9 @@ runs:
           Windows)
             case ${{ runner.arch }} in
               X64)
-                bootstrap_filename='bom-windows-amd64.exe'
+                bootstrap_filename='bom-amd64-windows.exe'
                 bootstrap_sha=${bootstrap_windows_amd64_sha}
-                desired_filename='bom-windows-amd64.exe'
+                desired_filename='bom-amd64-windows.exe'
                 ;;
               *)
                 log_error "unsupported architecture $arch"

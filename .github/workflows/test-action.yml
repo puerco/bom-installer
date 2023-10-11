@@ -19,7 +19,7 @@ jobs:
        run: bom version
      name: Install bom with default version
    test_sbom_action_with_given_input_version:
-     name: Install bom with given v0.2.1 version
+     name: Install bom with given v0.5.1 version
      runs-on: ${{ matrix.os }}
      strategy:
        matrix:
@@ -32,6 +32,6 @@ jobs:
      - name: Install Kubernetes bom
        uses: ./
        with:
-         bom-release: v0.2.1
+         bom-release: v0.5.1
      - name: Check version
        run: bom version
