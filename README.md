@@ -1,5 +1,7 @@
 # bom-installer
 
+:warning: This repository will be archived, please use the action from https://github.com/puerco/release-actions/blob/main/setup-bom/action.yml
+
 ### GitHub action to install `bom`, the Kubernetes SBOM tool
 
 This GitHub action installs `bom`,
